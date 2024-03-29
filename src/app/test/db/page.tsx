@@ -15,52 +15,57 @@ interface Database {
 }
 
 export default async function DbPage() {
-  console.log(RDS.Cluster);
-  console.log({
-    database: RDS.Cluster.defaultDatabaseName,
-    secretArn: RDS.Cluster.secretArn,
-    resourceArn: RDS.Cluster.clusterArn,
-  })
+  try {
+    console.log(RDS.Cluster);
+    console.log({
+      database: RDS.Cluster.defaultDatabaseName,
+      secretArn: RDS.Cluster.secretArn,
+      resourceArn: RDS.Cluster.clusterArn,
+    });
 
-  const db = new Kysely<Database>({
-    dialect: new DataApiDialect({
-      mode: "postgres",
-      driver: {
-        database: RDS.Cluster.defaultDatabaseName,
-        secretArn: RDS.Cluster.secretArn,
-        resourceArn: RDS.Cluster.clusterArn,
-        client: new RDSData({}),
-      },
-    }),
-  });
+    const db = new Kysely<Database>({
+      dialect: new DataApiDialect({
+        mode: "postgres",
+        driver: {
+          database: RDS.Cluster.defaultDatabaseName,
+          secretArn: RDS.Cluster.secretArn,
+          resourceArn: RDS.Cluster.clusterArn,
+          client: new RDSData({}),
+        },
+      }),
+    });
 
-  const record = await db
-    .selectFrom("tblcounter")
-    .select("tally")
-    .where("counter", "=", "hits")
-    .executeTakeFirstOrThrow();
+    const record = await db
+      .selectFrom("tblcounter")
+      .select("tally")
+      .where("counter", "=", "hits")
+      .executeTakeFirstOrThrow();
 
-  let count = record.tally;
+    let count = record.tally;
 
-  // TODO: see how to do a real atomic update statement
-  await db
-    .updateTable("tblcounter")
-    .set({
-      tally: ++count,
-    })
-    .execute();
-      
-  const time = new Date().toLocaleString();
-  if (!firstRenderTime) {
-    firstRenderTime = time;
+    // TODO: see how to do a real atomic update statement
+    await db
+      .updateTable("tblcounter")
+      .set({
+        tally: ++count,
+      })
+      .execute();
+
+    const time = new Date().toLocaleString();
+    if (!firstRenderTime) {
+      firstRenderTime = time;
+    }
+    return (
+      <div>
+        <ul>
+          <li>First Time: {firstRenderTime}</li>
+          <li>Time: {time}</li>
+          <li>Count: {count}</li>
+        </ul>
+      </div>
+    );
+  } catch (e) {
+    console.error(e);
+    return <div>Error: {e?.toString()}</div>;
   }
-  return (
-    <div>
-      <ul>
-        <li>First Time: {firstRenderTime}</li>
-        <li>Time: {time}</li>
-        <li>Count: {count}</li>
-      </ul>
-    </div>
-  );
 }
