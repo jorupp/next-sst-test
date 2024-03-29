@@ -1,5 +1,5 @@
 import { SSTConfig } from "sst";
-import { NextjsSite } from "sst/constructs";
+import { NextjsSite, RDS } from "sst/constructs";
 
 export default {
   config(_input) {
@@ -10,8 +10,15 @@ export default {
   },
   stacks(app) {
     app.stack(function Site({ stack }) {
-      const site = new NextjsSite(stack, "site");
-
+      const cluster = new RDS(stack, "Cluster", {
+        engine: "postgresql13.9",
+        defaultDatabaseName: 'ssttest',
+        migrations: "services/migrations",
+      });
+      const site = new NextjsSite(stack, "site", {
+        bind: [cluster],
+      });
+    
       stack.addOutputs({
         SiteUrl: site.url,
       });
