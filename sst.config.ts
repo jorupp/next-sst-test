@@ -17,6 +17,7 @@ export default {
       });
       const site = new NextjsSite(stack, "site", {
         bind: [cluster],
+        // buildCommand: "npm run build-with-storybook",
       });
     
       stack.addOutputs({
